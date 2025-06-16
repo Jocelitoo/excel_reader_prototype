@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Input } from "@/components/ui/input";
@@ -34,7 +36,6 @@ export default function Home() {
   const [contracts, setContrats] = useState(0);
 
   const alvoCardHandleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.files);
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -55,7 +56,7 @@ export default function Home() {
             defval: 0, // valores vazios viram 0
           })
           // remove qualquer linha cujo Número CCB seja string vazia ou undefined
-          .filter((row) => {
+          .filter((row: any) => {
             const ccb = row["Número CCB"];
             const status = row["status"];
             const data = row["Data de Inclusão"];
@@ -80,7 +81,7 @@ export default function Home() {
               mesString === month
             );
           })
-          .map((row) => ({
+          .map((row: any) => ({
             ...row,
             "Vlr Solicitado": Number(row["Vlr Solicitado"]) || 0,
             "Vlr Total do Crédito": Number(row["Vlr Total do Crédito"]) || 0,
@@ -179,7 +180,7 @@ export default function Home() {
       </div>
 
       {error && <p className="text-red-600">{error}</p>}
-      {total !== null && (
+      {total !== null && total2 !== null && (
         <div className="mt-4">
           <p className="text-green-700">
             <strong>Valor liquido</strong>: R$ {total.toLocaleString("pt-BR")}
