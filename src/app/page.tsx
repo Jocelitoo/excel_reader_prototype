@@ -1,103 +1,199 @@
-import Image from "next/image";
+"use client";
+
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { useState } from "react";
+import * as XLSX from "xlsx";
+
+dayjs.extend(customParseFormat);
+
+type RowData = {
+  "Número CCB": number;
+  "Vlr Solicitado": number;
+  "Vlr Total do Crédito": number;
+  "Data de Inclusão": string;
+  [key: string]: any;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [month, setMonth] = useState("6");
+  const [bank, setBank] = useState("");
+  const [total, setTotal] = useState<number | null>(null);
+  const [total2, setTotal2] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [contracts, setContrats] = useState(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const alvoCardHandleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.files);
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        // Lê o workbook
+        const wb = XLSX.read(bstr, { type: "binary" });
+        // Pega a primeira planilha
+        const sheetName = wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        // Converte em JSON – cada item é uma linha
+        const data: RowData[] = XLSX.utils
+          .sheet_to_json(sheet, {
+            raw: false, // para garantir strings inicialmente
+            defval: 0, // valores vazios viram 0
+          })
+          // remove qualquer linha cujo Número CCB seja string vazia ou undefined
+          .filter((row) => {
+            const ccb = row["Número CCB"];
+            const status = row["status"];
+            const data = row["Data de Inclusão"];
+
+            // 1) Parse com o formato correspondente: dia/mês/ano(2 dígitos) hora:minuto
+            const dt = dayjs(data, "D/M/YY HH:mm");
+
+            // 2) Pegar o mês:
+            //    - dt.month() retorna 0–11 (0 = janeiro)
+            //    - dt.month() + 1 retorna 1–12
+            const mesZeroBased = dt.month(); // ex: 5
+            const mes1a12 = dt.month() + 1; // ex: 6
+
+            // ou, se você quiser direto como string "6"
+            const mesString = dt.format("M"); // '6'
+
+            return (
+              ccb !== 0 &&
+              ccb !== undefined &&
+              ccb !== null &&
+              status !== "cancelada" &&
+              mesString === month
+            );
+          })
+          .map((row) => ({
+            ...row,
+            "Vlr Solicitado": Number(row["Vlr Solicitado"]) || 0,
+            "Vlr Total do Crédito": Number(row["Vlr Total do Crédito"]) || 0,
+          }));
+
+        // Calcula o somatório
+        const soma = data.reduce((acc, cur) => acc + cur["Vlr Solicitado"], 0);
+        const soma2 = data.reduce(
+          (acc, cur) => acc + cur["Vlr Total do Crédito"],
+          0
+        );
+
+        setTotal(soma);
+        setTotal2(soma2);
+        setError(null);
+        setContrats(data.length);
+      } catch (err: any) {
+        console.error(err);
+        setError(
+          "Erro ao processar o arquivo. Verifique se é um .xlsx válido."
+        );
+        setTotal(null);
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-semibold mb-2">Produção</h2>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <p>Banco:</p>
+
+          <Select onValueChange={(event) => setBank(event)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Selecione um banco" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Banco</SelectLabel>
+                <SelectItem value={"Alvo card"}>Alvo card</SelectItem>
+                <SelectItem value={"Vem card"}>Vem card</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="flex items-center gap-4">
+          <p>Mês:</p>
+
+          <Select
+            defaultValue={String(dayjs().month() + 1)}
+            onValueChange={(event) => {
+              setMonth(event);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Selecione um mês" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Mês</SelectLabel>
+                <SelectItem value={"1"}>Janeiro</SelectItem>
+                <SelectItem value={"2"}>Fevereiro</SelectItem>
+                <SelectItem value={"3"}>Março</SelectItem>
+                <SelectItem value={"4"}>Abril</SelectItem>
+                <SelectItem value={"5"}>Maio</SelectItem>
+                <SelectItem value={"6"}>Junho</SelectItem>
+                <SelectItem value={"7"}>Julho</SelectItem>
+                <SelectItem value={"8"}>Agosto</SelectItem>
+                <SelectItem value={"9"}>Setembro</SelectItem>
+                <SelectItem value={"10"}>Outubro</SelectItem>
+                <SelectItem value={"11"}>Novembro</SelectItem>
+                <SelectItem value={"12"}>Dezembro</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {bank === "Alvo card" && month && (
+          <div className="flex items-center gap-4">
+            <p>Arquivo:</p>
+
+            <Input
+              type="file"
+              accept=".xlsx, .xls"
+              onChange={alvoCardHandleFile}
+              className="w-fit"
+            />
+          </div>
+        )}
+      </div>
+
+      {error && <p className="text-red-600">{error}</p>}
+      {total !== null && (
+        <div className="mt-4">
+          <p className="text-green-700">
+            <strong>Valor liquido</strong>: R$ {total.toLocaleString("pt-BR")}
+          </p>
+
+          <p className="text-green-700">
+            <strong>Valor bruto</strong>: R$ {total2.toLocaleString("pt-BR")}
+          </p>
+
+          <p className="text-green-700">
+            Número de <strong>contratos</strong>: {contracts}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
