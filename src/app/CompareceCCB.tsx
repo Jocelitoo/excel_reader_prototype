@@ -107,7 +107,8 @@ const CompareCCB: React.FC = () => {
               </ul>
             </div>
           )}
-          {onlyInB.length > 0 && (
+          
+          {/* {onlyInB.length > 0 && (
             <div>
               <h3 className="font-medium">
                 Contratos presentes em Arquivo 2 e não em Arquivo 1:
@@ -120,7 +121,7 @@ const CompareCCB: React.FC = () => {
                 ))}
               </ul>
             </div>
-          )}
+          )} */}
         </div>
       )}
       {!error && !loading && onlyInA.length === 0 && onlyInB.length === 0 && (
