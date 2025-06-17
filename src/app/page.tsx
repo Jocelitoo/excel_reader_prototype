@@ -24,6 +24,7 @@ type RowData = {
   "Vlr Solicitado": number;
   "Vlr Total do Crédito": number;
   "Data de Inclusão": string;
+  Status: string;
   [key: string]: any;
 };
 
@@ -58,7 +59,7 @@ export default function Home() {
           // remove qualquer linha cujo Número CCB seja string vazia ou undefined
           .filter((row: any) => {
             const ccb = row["Número CCB"];
-            const status = row["status"];
+            const status = row["Status"];
             const data = row["Data de Inclusão"];
 
             // 1) Parse com o formato correspondente: dia/mês/ano(2 dígitos) hora:minuto
@@ -77,7 +78,7 @@ export default function Home() {
               ccb !== 0 &&
               ccb !== undefined &&
               ccb !== null &&
-              status !== "cancelada" &&
+              status !== "Cancelada" &&
               mesString === month
             );
           })
