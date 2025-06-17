@@ -61,7 +61,10 @@ const CompareCCB: React.FC = () => {
 
       <div className="flex flex-col gap-4 mb-4">
         <div className="flex items-center gap-4">
-          <p>Arquivo 1 (2tech):</p>
+          <p>
+            Arquivo 1 <span className="font-bold">(2tech)</span>:
+          </p>
+
           <Input
             type="file"
             accept=".xlsx, .xls"
@@ -71,7 +74,9 @@ const CompareCCB: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <p>Arquivo 2 (banco):</p>
+          <p>
+            Arquivo 2 <span className="font-bold">(banco)</span>:
+          </p>
 
           <Input
             type="file"
@@ -96,7 +101,7 @@ const CompareCCB: React.FC = () => {
           {onlyInA.length > 0 && (
             <div>
               <h3 className="font-medium">
-                Contratos presentes em Arquivo 1 e não em Arquivo 2:
+                Contratos presentes no 2TECH e não no BANCO:
               </h3>
               <ul className="list-disc ml-6">
                 {onlyInA.map((ccb) => (
@@ -107,7 +112,7 @@ const CompareCCB: React.FC = () => {
               </ul>
             </div>
           )}
-          
+
           {/* {onlyInB.length > 0 && (
             <div>
               <h3 className="font-medium">
@@ -124,8 +129,10 @@ const CompareCCB: React.FC = () => {
           )} */}
         </div>
       )}
-      {!error && !loading && onlyInA.length === 0 && onlyInB.length === 0 && (
-        <p className="text-green-600">Os arquivos estão compatíveis.</p>
+      {!error && !loading && onlyInA.length === 0 && (
+        <p className="text-green-600">
+          Os dados no 2tech e no banco estão compatíveis.
+        </p>
       )}
     </div>
   );
