@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useState } from "react";
 import * as XLSX from "xlsx";
+import CompareCCB from "./CompareceCCB";
 
 dayjs.extend(customParseFormat);
 
@@ -111,7 +112,7 @@ export default function Home() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 space-y-16">
       <h2 className="text-xl font-semibold mb-2">Produção</h2>
 
       <div className="flex flex-col gap-4">
@@ -178,24 +179,26 @@ export default function Home() {
             />
           </div>
         )}
+
+        {error && <p className="text-red-600">{error}</p>}
+        {total !== null && total2 !== null && (
+          <div className="mt-4">
+            <p className="text-green-700">
+              <strong>Valor liquido</strong>: R$ {total.toLocaleString("pt-BR")}
+            </p>
+
+            <p className="text-green-700">
+              <strong>Valor bruto</strong>: R$ {total2.toLocaleString("pt-BR")}
+            </p>
+
+            <p className="text-green-700">
+              Número de <strong>contratos</strong>: {contracts}
+            </p>
+          </div>
+        )}
       </div>
 
-      {error && <p className="text-red-600">{error}</p>}
-      {total !== null && total2 !== null && (
-        <div className="mt-4">
-          <p className="text-green-700">
-            <strong>Valor liquido</strong>: R$ {total.toLocaleString("pt-BR")}
-          </p>
-
-          <p className="text-green-700">
-            <strong>Valor bruto</strong>: R$ {total2.toLocaleString("pt-BR")}
-          </p>
-
-          <p className="text-green-700">
-            Número de <strong>contratos</strong>: {contracts}
-          </p>
-        </div>
-      )}
+      <CompareCCB />
     </div>
   );
 }
